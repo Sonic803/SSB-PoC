@@ -1,0 +1,6 @@
+*.o
+.gdbinit
+util/start.mk
+util/start.pl
+util/tmp.gdb
+.vscode
