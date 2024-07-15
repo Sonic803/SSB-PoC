@@ -76,6 +76,8 @@ struct des_proc
 	natq contesto[N_REG];
 	/// radice del TRIE del processo
 	paddr cr3;
+	/// valore di IA32_SPEC_CTRL.SSBD
+	bool SSBD;
 
 	/// prossimo processo in coda
 	des_proc *puntatore;
@@ -830,6 +832,27 @@ extern "C" void c_trasforma(vaddr ind_virt)
 /// @{
 /////////////////////////////////////////////////////////////////////////////////
 
+/// Aggiunte SSBD
+
+/*! @brief Attiva o disattiva la mitigazione SSBD
+ *  @param cmd Il comando da eseguire (PR_SPEC_ENABLE o PR_SPEC_DISABLE)
+ */
+extern "C" void c_ssb_ctrl(int cmd)
+{
+	switch (cmd)
+	{
+	case PR_SPEC_ENABLE:
+		flog(LOG_INFO, "Speculative Store Bypass abilitata");
+		esecuzione->SSBD = 0;
+		break;
+
+	case PR_SPEC_DISABLE:
+		flog(LOG_INFO, "Speculative Store Bypass disabilitata");
+		esecuzione->SSBD = 1;
+		break;
+	}
+}
+
 /// Associazione IRQ -> processo esterno che lo gestisce
 des_proc *a_p[apic::MAX_IRQ];
 
@@ -994,6 +1017,9 @@ des_proc *crea_processo(void f(natq), natq a, int prio, char liv)
 	if (id == 0xFFFFFFFF)
 		goto err_del_p;
 	p->id = id;
+
+	// inizializzazione del campo SSBD
+	p->SSBD = 0;
 
 	// creazione della tabella radice del processo
 	p->cr3 = alloca_tab();

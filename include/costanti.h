@@ -41,6 +41,7 @@
 #define TIPO_D			0x25	///< delay()
 #define TIPO_L			0x26	///< do_log()
 #define TIPO_GMI		0x27	///< getmeminfo()
+#define TIPO_SSBD		0x28	///< ssb_ctrl()
 /// @}
 
 /// @name Primitive riservate per il modulo I/O
@@ -116,4 +117,20 @@
 #define MAX_PRIORITY		(MIN_EXT_PRIO - 1)	///< priorità massima dei processi (non esterni)
 #define MIN_PRIORITY		0x1			///< priorità minima dei processi
 #define MAX_EXT_PRIO		(MIN_EXT_PRIO + 0xFE)	///< priorità massima dei processi esterni
+/// @}
+
+/// @name Argomenti di ssb_ctrl
+///
+/// Possibili argomenti della primitiva `ssb_ctrl()`.
+/// @{
+#define PR_SPEC_ENABLE			0	// Enable the speculation feature, disable the mitigation. 
+#define PR_SPEC_DISABLE			1	// Disable the speculation feature, enable the mitigation.
+/// @}
+
+/// @name Maschera per ssbd
+/// @{
+#define SPEC_CTRL_MSR           0x48                // Address of IA32_SPEC_CTRL MSR.
+#define SSBD_BIT_NUM   			2                   // Bit number of SSBD in IA32_SPEC_CTRL. 
+#define SSBD_MASK   			1<<SSBD_BIT_NUM     // Bit mask to set SSBD. 
+#define SSBD_CLEAR_MASK   		(~SSBD_MASK & 0xFF) // Bit mask to clear SSBD. 
 /// @}

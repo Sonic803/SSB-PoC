@@ -125,3 +125,28 @@ getiomeminfo:
 	int $IO_TIPO_GMI
 	ret
 	.cfi_endproc
+
+// SSB
+	.global flushCacheLine
+flushCacheLine:
+    clflush (%rdi)
+    ret
+
+	.global __rdtscp
+__rdtscp:
+    rdtscp
+    shl $32, %rdx
+    or %rdx, %rax
+    ret
+
+	.global __lfence
+__lfence:
+    lfence
+    ret
+
+	.global ssb_ctrl
+ssb_ctrl:
+	.cfi_startproc
+	int $TIPO_SSBD
+	ret
+	.cfi_endproc

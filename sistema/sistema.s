@@ -5,6 +5,54 @@
 #include <costanti.h>
 
 //////////////////////////////////////////////////////////////////////////
+// SSBD                                                                 //
+//////////////////////////////////////////////////////////////////////////
+
+	.extern c_ssb_ctrl
+a_ssb_ctrl:
+	.cfi_startproc
+	.cfi_def_cfa_offset 40
+	.cfi_offset rip, -40
+	.cfi_offset rsp, -16
+	call salva_stato
+	call c_ssb_ctrl
+	call carica_stato
+	iretq
+	.cfi_endproc
+
+	.global get_ssbd
+get_ssbd:
+	push %rcx
+	push %rdx
+
+	mov $SPEC_CTRL_MSR,%ecx
+	rdmsr	//; Read the current MSR value into EDX:EAX
+	shr $SSBD_BIT_NUM, %al
+	and $1, %al
+
+	pop %rdx
+	pop %rcx
+	ret
+
+	.global set_ssbd
+set_ssbd:
+	push %rcx
+	push %rdx
+	push %rax
+
+	mov $SPEC_CTRL_MSR,%ecx
+	rdmsr	//; Read the current MSR value into EDX:EAX
+	and $SSBD_CLEAR_MASK, %al
+	shl $SSBD_BIT_NUM, %dil
+	or %dil, %al
+	wrmsr
+
+	pop %rax
+	pop %rdx
+	pop %rcx
+	ret
+
+//////////////////////////////////////////////////////////////////////////
 // AVVIO                                                                //
 //////////////////////////////////////////////////////////////////////////
 
@@ -61,6 +109,7 @@ halt:
 .set R14, CTX+112
 .set R15, CTX+120
 .set CR3, CTX+128
+.set SSBD,CTX+136
 
 // copia lo stato dei registri generali nel des_proc del processo puntato da
 // esecuzione.  Nessun registro viene sporcato.
@@ -107,6 +156,15 @@ salva_stato:
 	movq %r13, R13(%rbx)
 	movq %r14, R14(%rbx)
 	movq %r15, R15(%rbx)
+
+	//Salva stato SSBD
+	push %rax
+
+	call get_ssbd
+	movb %al, SSBD(%rbx)
+
+	pop %rax
+	//
 
 	popq %rax
 	.cfi_adjust_cfa_offset -8
@@ -162,6 +220,15 @@ carica_stato:
 	movq PUNT_NUCLEO(%rbx), %rcx
 	movq tss_punt_nucleo, %rdi
 	movq %rcx, (%rdi)
+
+	//Carica stato SSBD
+	push %rdi
+
+	movb SSBD(%rbx), %dil
+	call set_ssbd
+
+	pop %rdi
+	///
 
 	movq RCX(%rbx), %rcx
 	movq RDI(%rbx), %rdi
@@ -249,6 +316,7 @@ init_idt:
 	carica_gate	TIPO_D		a_delay		LIV_UTENTE
 	carica_gate	TIPO_L		a_do_log	LIV_UTENTE
 	carica_gate	TIPO_GMI	a_getmeminfo	LIV_UTENTE
+	carica_gate	TIPO_SSBD	a_ssb_ctrl	LIV_UTENTE
 
 	// primitive per il livello I/O (tipi 0x3-)
 	carica_gate	TIPO_APE	a_activate_pe	LIV_SISTEMA
